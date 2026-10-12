@@ -44,7 +44,7 @@ with torch.no_grad():
 
     directions = [x]
 
-    for _ in range(num_variations):
+    for i in range(num_variations):
         v = x_saved.clone()
         for step in reversed(range(save_step + 1)):
             t = torch.full((1,), step, device=device, dtype=torch.long)
