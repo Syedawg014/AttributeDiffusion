@@ -75,7 +75,7 @@ The model is trained to predict the noise added to latent edit direction vectors
 | Noise Scheduler | Linear |
 | Beta Start | 0.0001 |
 | Beta End | 0.02 |
-| Batch Size | 128 |
+| Batch Size | 256 |
 | Number of Epochs | 100 |
 | Optimizer | AdamW |
 | Learning Rate | 0.0002 |
