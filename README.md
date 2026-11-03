@@ -4,7 +4,7 @@
 
 ## Overview
 
-The aim of this project is to develop an attribute-guided facial image manipulation system using **Denoising Diffusion Probabilistic Models (DDPMs)** to modify specific facial attributes while maintaining the original identity and visual realism of the face.
+The aim of this project is to develop an attribute based facial image manipulation system using Denoising Diffusion Probabilistic Models (DDPMs) to modify specific facial attributes while maintaining the original identity and visual realism of the face.
 
 Given a source face and a target attribute the model generates a new image of the same face with the selected attribute edited while preserving identity and realism.
 
@@ -16,23 +16,21 @@ The project was built progressively to develop a strong conceptual and practical
 2. Implemented MNIST digit classification using Artificial Neural Networks from scratch with NumPy.
 3. Learned optimizers and hyperparameter tuning along with CNN fundamentals.
 4. Implemented ANN and CNN models on MNIST using PyTorch.
-5. Implemented a CNN on CIFAR-10 using different normalization and regularization techniques:
-   - Batch Normalization
-   - Dropout Regularization
+5. Implemented a CNN on CIFAR-10
 6. Learned basic Probability Theory.
-7. Learned the fundamentals of Generative AI by following the IITM *Mathematical Foundations of Generative AI* playlist.
-8. Studied GANs and StyleGANs and implemented them on CIFAR-10.
-9. Studied Denoising Autoencoders,Variational Autoencoders and Hierarchical Variational Autoencoder and implemented them on MNIST.
-10. Learned DDPMs and studied the research paper before implementing DDPM on MNIST.
+7. Learned the fundamentals of Generative AI
+8. Studied GANs and StyleGANs and generated images from CIFAR-10 using DCGAN.
+9. Studied Denoising Autoencoder,Variational Autoencoder and Hierarchical Variational Autoencoder and implemented them on MNIST.
+10. Learned DDPMs and implemented DDPM on MNIST.
 11. Finally studied Attribute Diffusion and implemented the approach after reading its research paper.
 
 **Research Paper:** [Attribute Diffusion: Diffusion-Driven Diverse Attribute Editing (WACV 2025)](https://openaccess.thecvf.com/content/WACV2025/papers/Parihar_Attribute_Diffusion_Diffusion_Driven_Diverse_Attribute_Editing_WACV_2025_paper.pdf)
 
 ## Custom Dataset - Edit Direction Vectors
 
-Since there is no readily available dataset containing pairs of faces with and without specific attributes we created our own dataset using existing editing tools. StyleCLIP was used to generate hairstyle variations along with other attributes such as eyeglasses and age and smile.
+Since there is no readily available dataset containing pairs of faces with and without specific attributes we created our own dataset using existing editing tools to generate pairs of faces with and without attributes.
 
-The original and edited images were passed through **Encoder4Editing (e4e)** for StyleGAN2 to obtain their latent vectors in \(W+) space. The difference between these vectors gives the final edit direction vector.
+The original and edited images were passed through Encoder4Editing (e4e) for StyleGAN2 to obtain their latent vectors in (W+) space. The difference between these vectors is then normalized to zero mean this gives the final edit direction vector.
 
 **Edit Direction Vector:**
 
@@ -44,20 +42,16 @@ The original and edited images were passed through **Encoder4Editing (e4e)** for
 
 ## Model Architecture Overview
 
-The denoising network uses fully connected layers to predict the noise added to a flattened edit direction vector of size 9216 (18 × 512).
-
-A 128-dimensional sinusoidal timestep embedding is processed through an MLP and injected into 8 residual blocks with 2048 hidden neurons each. Every block uses LayerNorm and SiLU activations along with linear layers and residual connections.
-
-The final layers predict the noise during the forward pass. A timestep-dependent skip connection is also used in the final output to help the network learn corrections to the input.
+The denoising network uses fully connected layers to predict the noise added to a flattened edit direction vector of size 9216 (18 × 512). The network takes two inputs the direction vector at a random timestep T and a 128 dimensional sinusoidal timestep embedding for the network to know what timestep the direction vector is from that is whether its a pure noise vector or close to a final generated vector. These two are passed through an MLP having 8 residual blocks. Every residual block uses LayerNorm and SiLU activations along with skip connections.
 
 ## Training Process
 
 The model is trained to predict the noise added to latent edit direction vectors.
 
-1. **Load Data:** Load batches of latent edit direction vectors from the custom dataset.
+1. **Load Data:** Load a batch of latent edit direction vectors from the custom dataset.
 2. **Sample Noise:** Generate random Gaussian noise and randomly select a timestep for each sample.
-3. **Forward Diffusion:** Add noise to the original edit directions using the noise scheduler according to the sampled timesteps.
-4. **Noise Prediction:** Pass the noisy vectors and timesteps through the MLP denoising network to predict the added noise.
+3. **Forward Diffusion:** Add noise to the original edit directions using a noise scheduler according to the sampled timesteps.
+4. **Noise Prediction:** Pass the noisy edit vector and timestep embedding through the MLP denoising network to predict the added noise.
 5. **Calculate Loss:** Compute Mean Squared Error (MSE) between the predicted noise and the actual noise.
 6. **Update Weights:** Backpropagate the loss and update the model parameters using AdamW. Gradient clipping is applied to stabilize training.
 7. **Save Model:** Save the model weights for checkpoints.
@@ -86,14 +80,11 @@ The model learns to predict the Gaussian noise added to each edit direction vect
 
 ## Editing Process
 
-A noisy flattened vector of shape `(1, 18 × 512)` is sampled and passed through the reverse diffusion process over 1000 timesteps to generate a coarse variation edit direction vector.
+A noisy flattened edit vector is sampled and passed through the reverse diffusion process across 1000 timesteps to generate a coarse variation edit direction vector. While going to previous timestep we add noise this makes the path taken by the model to be probabilistic rather than deterministic resulting in different generated direction vectors every run.
 
-this edit direction vector is scaled by a parameter gamma(γ) before adding the mean back this helps control the diversity of the images
-then the final edit latent vector is scaled by lambda(λ) to determine strength of the edit and then added to the encoded latent vector of the input image through e4e(encoder4editing or any test latent vector of a face) then finally passed through the decoder to generate the edited face. 
+this edit direction vector is scaled by a parameter gamma(γ) before adding the mean back this helps control the diversity of the images then the final edit vector is scaled by lambda(λ) to control the strength of the edit and then added to the encoded latent vector of the input image obtained from the e4e encoder. Finally passed through a decoder to generate the edited face.
 
-To generate fine variations the output at timestep \(t_0\) is saved and used as the starting point for further reverse diffusion runs. Repeating this process \(n\) times produces \(n\) fine variation latent vectors which are then processed in a similar way as before and passed through the StyleGAN2 decoder to generate the corresponding attribute edits.
-
-The lower the selected timestep the finer the variations produced.
+To generate fine variations the output at some timestep (t) is saved in the initial run to generate coarse variation vector and is later used as the starting point for further reverse diffusion runs to generate fine variation vectors. Repeating this process ‘n’ times produces ‘n’ fine variation latent vectors which are then processed in a similar way as before and passed through the decoder to generate the corresponding attribute edits. The lower the selected timestep the finer the variations produced.
 
 ### Editing Process
 
