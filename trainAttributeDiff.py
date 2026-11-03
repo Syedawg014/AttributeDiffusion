@@ -11,9 +11,9 @@ def train():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     num_timesteps = 1000
     scheduler = LinearNoiseScheduler(num_timesteps=num_timesteps, beta_start=0.0001, beta_end=0.02)
-    train_loader, train_dataset = get_dataloader(batch_size=128)
-    model = MLP(in_dim=18 * 512, hidden_dim=1024, t_emb_dim=128).to(device)
-    num_epochs = 20
+    train_loader, train_dataset = get_dataloader(batch_size=256)
+    model = MLP(in_dim=18 * 512, hidden_dim=2048, t_emb_dim=128).to(device)
+    num_epochs = 100
     lr = 2e-4
 
     optimizer = AdamW(model.parameters(), weight_decay=0.01, lr=lr)

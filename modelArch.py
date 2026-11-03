@@ -30,7 +30,7 @@ class MLPBlock(nn.Module):
 
 
 class MLP(nn.Module):
-    def __init__(self, in_dim=18 * 512, hidden_dim=1024, t_emb_dim=128, num_blocks=8):
+    def __init__(self, in_dim=18 * 512, hidden_dim=2048, t_emb_dim=128, num_blocks=8):
         super().__init__()
         self.t_emb_dim = t_emb_dim
 
@@ -42,7 +42,7 @@ class MLP(nn.Module):
 
         self.multiplier = nn.Linear(t_emb_dim, 1)
         self.in_layer = nn.Linear(in_dim, hidden_dim)
-        self.blocks = nn.ModuleList([MLPBlock(hidden_dim, t_emb_dim) for _ in range(num_blocks)])
+        self.blocks = nn.ModuleList([MLPBlock(hidden_dim, t_emb_dim) for i in range(num_blocks)])
         self.out_layer = nn.Sequential(
             nn.LayerNorm(hidden_dim),
             nn.SiLU(),
