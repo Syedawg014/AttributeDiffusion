@@ -114,3 +114,8 @@ To generate fine variations the output at some timestep (t) is saved in the init
 | Output 1 | Output 2 |
 |:---:|:---:|
 | <img width="1563" height="337" alt="Screenshot 2026-10-13 201416" src="https://github.com/user-attachments/assets/36c98a75-3100-47d4-8b46-1ea35f9d85af" /> |<img width="1562" height="325" alt="Screenshot 2026-10-13 001603" src="https://github.com/user-attachments/assets/1d78ed1a-35a8-48af-a204-7000f5d26539" />|
+## Project Members
+
+- [SYED ASLAM](https://github.com/Syedawg014)
+- [SAMARTH GUPTA](https://github.com/NoxAndLumos)
+- [ANAMIKA DASGUPTA](https://github.com/bt25eee054)
